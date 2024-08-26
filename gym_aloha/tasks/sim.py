@@ -1,5 +1,5 @@
 import collections
-
+import torch
 import numpy as np
 from dm_control.suite import base
 import clip
