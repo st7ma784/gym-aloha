@@ -113,9 +113,7 @@ class AlohaEnv(gym.Env):
         time_limit = float("inf")
         #Get clip emb of task.
         #set self.goal to clip emb. 
-        xml_path=random.choice(["bimanual_viperx_transfer_cube.xml", "bimanual_viperx_insertion.xml", "bimanual_viperx_end_effector_transfer_cube.xml","bimanual_viperx_end_effector_insertion.xml"])
-        physics = mujoco.Physics.from_xml_path(str(xml_path))
-        task=PromptTask(self.desc)
+        
         if "transfer_cube" in task_name:
             xml_path = ASSETS_DIR / "bimanual_viperx_transfer_cube.xml"
             physics = mujoco.Physics.from_xml_path(str(xml_path))
@@ -135,7 +133,9 @@ class AlohaEnv(gym.Env):
             physics = mujoco.Physics.from_xml_path(str(xml_path))
             task = InsertionEndEffectorTask()
         else:
-            raise NotImplementedError(task_name)
+            xml_path=random.choice(["bimanual_viperx_transfer_cube.xml", "bimanual_viperx_insertion.xml", "bimanual_viperx_end_effector_transfer_cube.xml","bimanual_viperx_end_effector_insertion.xml"])
+            physics = mujoco.Physics.from_xml_path(str(xml_path))
+            task=PromptTask(self.desc)
         
         env = control.Environment(
             physics, task, time_limit, control_timestep=DT, n_sub_steps=None, flat_observation=False
