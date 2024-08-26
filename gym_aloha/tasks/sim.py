@@ -2,7 +2,7 @@ import collections
 
 import numpy as np
 from dm_control.suite import base
-
+import clip
 from gym_aloha.constants import (
     START_ARM_POSE,
     normalize_puppet_gripper_position,
@@ -30,6 +30,90 @@ Observation space: {"qpos": Concat[ left_arm_qpos (6),         # absolute joint 
                     "images": {"main": (480x640x3)}        # h, w, c, dtype='uint8'
 """
 
+
+class PromptTask(base.Task):
+    def __init__(self, prompt,Aloha,device=torch.cpu):
+        super().__init__(random=random)
+        self.env=Aloha._env
+        self.clip, self.transform = clip.load("ViT-B/32", device=device)
+        self.text = clip.tokenize([prompt]).to(device)
+        self.device=device
+        self.text=self.clip.encode_text(text)
+        self.text_features = text_features / text_features.norm(dim=1, keepdim=True)
+        
+    def before_step(self, action, physics):
+        left_arm_action = action[:6]
+        right_arm_action = action[7 : 7 + 6]
+        normalized_left_gripper_action = action[6]
+        normalized_right_gripper_action = action[7 + 6]
+
+        left_gripper_action = unnormalize_puppet_gripper_position(normalized_left_gripper_action)
+        right_gripper_action = unnormalize_puppet_gripper_position(normalized_right_gripper_action)
+
+        full_left_gripper_action = [left_gripper_action, -left_gripper_action]
+        full_right_gripper_action = [right_gripper_action, -right_gripper_action]
+
+        env_action = np.concatenate(
+            [left_arm_action, full_left_gripper_action, right_arm_action, full_right_gripper_action]
+        )
+        super().before_step(env_action, physics)
+        return
+
+    def initialize_episode(self, physics):
+        """Sets the state of the environment at the start of each episode."""
+        super().initialize_episode(physics)
+
+    @staticmethod
+    def get_qpos(physics):
+        qpos_raw = physics.data.qpos.copy()
+        left_qpos_raw = qpos_raw[:8]
+        right_qpos_raw = qpos_raw[8:16]
+        left_arm_qpos = left_qpos_raw[:6]
+        right_arm_qpos = right_qpos_raw[:6]
+        left_gripper_qpos = [normalize_puppet_gripper_position(left_qpos_raw[6])]
+        right_gripper_qpos = [normalize_puppet_gripper_position(right_qpos_raw[6])]
+        return np.concatenate([left_arm_qpos, left_gripper_qpos, right_arm_qpos, right_gripper_qpos])
+
+    @staticmethod
+    def get_qvel(physics):
+        qvel_raw = physics.data.qvel.copy()
+        left_qvel_raw = qvel_raw[:8]
+        right_qvel_raw = qvel_raw[8:16]
+        left_arm_qvel = left_qvel_raw[:6]
+        right_arm_qvel = right_qvel_raw[:6]
+        left_gripper_qvel = [normalize_puppet_gripper_velocity(left_qvel_raw[6])]
+        right_gripper_qvel = [normalize_puppet_gripper_velocity(right_qvel_raw[6])]
+        return np.concatenate([left_arm_qvel, left_gripper_qvel, right_arm_qvel, right_gripper_qvel])
+
+    @staticmethod
+    def get_env_state(physics):
+        raise NotImplementedError
+
+    def get_observation(self, physics):
+        obs = collections.OrderedDict()
+        obs["qpos"] = self.get_qpos(physics)
+        obs["qvel"] = self.get_qvel(physics)
+        obs["env_state"] = self.get_env_state(physics)
+        obs["images"] = {}
+        obs["images"]["top"] = physics.render(height=480, width=640, camera_id="top")
+        obs["images"]["angle"] = physics.render(height=480, width=640, camera_id="angle")
+        obs["images"]["vis"] = physics.render(height=480, width=640, camera_id="front_close")
+
+        return obs
+
+    def get_reward(self, physics):
+        imageBatch=[physics.render(height=480, width=640, camera_id="top"),
+                    physics.render(height=480, width=640, camera_id="angle"),
+                    physics.render(height=480, width=640, camera_id="front_close")]
+        #transform each imageBatch to go through clip encoder
+        imageBatch=torch.stack([self.transform(i) for i in imageBatch],dim=0)
+        #encode each image.
+        vectors=self.clip.encode_image(imageBatch)        
+        #do cosine similarity against prompt. 
+
+        vectors=vectors/torch.norm(vectors,dim=-1,keepdim=True)
+        prod=vectors@self.text_features.t
+        return torch.max(prod)*4
 
 class BimanualViperXTask(base.Task):
     def __init__(self, random=None):
