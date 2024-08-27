@@ -133,7 +133,7 @@ class AlohaEnv(gym.Env):
             physics = mujoco.Physics.from_xml_path(str(xml_path))
             task = InsertionEndEffectorTask()
         else:
-            xml_path=random.choice(["bimanual_viperx_transfer_cube.xml", "bimanual_viperx_insertion.xml", "bimanual_viperx_end_effector_transfer_cube.xml","bimanual_viperx_end_effector_insertion.xml"])
+            xml_path=ASSETS_DIR/"bimanual_viperx_transfer_cube.xml"#, "bimanual_viperx_insertion.xml", "bimanual_viperx_end_effector_transfer_cube.xml","bimanual_viperx_end_effector_insertion.xml"])
             physics = mujoco.Physics.from_xml_path(str(xml_path))
             task=PromptTask(self.desc)
         
