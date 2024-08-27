@@ -104,10 +104,12 @@ class PromptTask(base.Task):
         return obs
 
     def get_reward(self, physics):
-        imageBatch=[physics.render(height=480, width=640, camera_id="top"),
-                    physics.render(height=480, width=640, camera_id="angle"),
-                    physics.render(height=480, width=640, camera_id="front_close")]
+        imageBatch=[physics.render(height=480, width=640, camera_id="top")/255,
+                    physics.render(height=480, width=640, camera_id="angle")/255,
+                    physics.render(height=480, width=640, camera_id="front_close")/255]
         #transform each imageBatch to go through clip encoder
+        imageBatch=[Image.fromarray(i.astype('uint8'),'RGB') for i in imageBatch]
+        
         imageBatch=torch.stack([self.transform(i) for i in imageBatch],dim=0)
         #encode each image.
         vectors=self.clip.encode_image(imageBatch)        
