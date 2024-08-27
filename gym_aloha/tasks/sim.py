@@ -87,7 +87,9 @@ class PromptTask(base.Task):
 
     @staticmethod
     def get_env_state(physics):
-        raise NotImplementedError
+        env_state = physics.data.qpos.copy()[16:]
+        return env_state
+
 
     def get_observation(self, physics):
         obs = collections.OrderedDict()
