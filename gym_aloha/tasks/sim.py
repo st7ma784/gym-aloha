@@ -33,13 +33,14 @@ Observation space: {"qpos": Concat[ left_arm_qpos (6),         # absolute joint 
 
 class PromptTask(base.Task):
     def __init__(self, prompt, device=torch.cpu):
-        super().__init__(random=random)
+        super().__init__()
         self.clip, self.transform = clip.load("ViT-B/32", device=device)
         self.text = clip.tokenize([prompt]).to(device)
         self.device=device
-        self.text=self.clip.encode_text(text)
-        self.text_features = text_features / text_features.norm(dim=1, keepdim=True)
-        
+        self.text=self.clip.encode_text(self.text)
+        self.text_features = self.text / self.text.norm(dim=1, keepdim=True)
+
+    
     def before_step(self, action, physics):
         left_arm_action = action[:6]
         right_arm_action = action[7 : 7 + 6]
