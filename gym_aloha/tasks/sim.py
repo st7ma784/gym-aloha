@@ -2,7 +2,7 @@ import collections
 import torch
 import numpy as np
 from dm_control.suite import base
-from PIl import Image
+from PIL import Image
 import clip
 from gym_aloha.constants import (
     START_ARM_POSE,
