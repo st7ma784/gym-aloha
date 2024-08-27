@@ -167,8 +167,7 @@ class AlohaEnv(gym.Env):
             BOX_POSE[0] = sample_box_pose(seed)  # used in sim reset
         elif "insertion" in self.task:
             BOX_POSE[0] = np.concatenate(sample_insertion_pose(seed))  # used in sim reset
-        else:
-            raise ValueError(self.task)
+     
 
         raw_obs = self._env.reset()
 
