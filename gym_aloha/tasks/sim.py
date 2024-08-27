@@ -117,7 +117,7 @@ class PromptTask(base.Task):
         #do cosine similarity against prompt. 
 
         vectors=vectors/torch.norm(vectors,dim=-1,keepdim=True)
-        prod=vectors@self.text_features.t
+        prod=vectors@self.text_features.T
         return torch.max(prod)*4
 
 class BimanualViperXTask(base.Task):
