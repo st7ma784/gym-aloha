@@ -32,8 +32,8 @@ Observation space: {"qpos": Concat[ left_arm_qpos (6),         # absolute joint 
 
 
 class PromptTask(base.Task):
-    def __init__(self, prompt, device="cpu"):
-        super().__init__()
+    def __init__(self, prompt, device="cpu", random=None):
+        super().__init__(random=random)
         self.clip, self.transform = clip.load("ViT-B/32", device=device)
         self.text = clip.tokenize([prompt]).to(device)
         self.device=device
