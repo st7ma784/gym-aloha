@@ -36,10 +36,48 @@ class PromptTask(base.Task):
     def __init__(self, prompt, device="cpu", random=None):
         super().__init__(random=random)
         self.clip, self.transform = clip.load("ViT-B/32", device=device)
+        # #if prompt is file path:
+        #     #assume task is to tidy:
+        #     #calculate example vector through CLIP model with 
+        #     prompts = [
+        #         "A {} attic",
+        #         "A {} basement",
+        #         "A {} bedroom closet",
+        #         "A {} garage",
+        #         "A {} hallway closet",
+        #         "A {} kitchen pantry",
+        #         "A {} laundry room",
+        #         "A {} loft",
+        #         "A {} shed",
+        #         "A {} storage unit",
+        #         "A {} utility room"
+        #         "A {} desk"
+        #     ]
+        #     means=torch.zeros(512)
+        #     with torch.no_grad:
+        #         for prompt in prompts:
+        #             before = prompt.format("full")
+        #             after= prompt.format("tidy")
+                
+        #             prompt=clip.tokenize([before,after])
+        #             vectors=model.encode_text(prompt)
+        #             #vectors=vectors/vectors.norm(dim=-1,keepdim=True)
+        #             #print(vectors.shape)
+        #             delta=torch.sub(vectors[0],vectors[1])
+        #             means=torch.add(means,delta)
+        #     means=torch.div(means,len(prompts))
+        #     #open file path, 
+             
+        #     # features=clip.encode_image(Im)
+        #     # features += means
+        #     text_features=features/features.norm(dim=-1,keepdim=True)
+
+        #else prompt is string:
         self.text = clip.tokenize([prompt]).to(device)
-        self.device=device
         self.text=self.clip.encode_text(self.text)
         self.text_features = self.text / self.text.norm(dim=1, keepdim=True)
+        self.device=device
+
 
     
     def before_step(self, action, physics):
