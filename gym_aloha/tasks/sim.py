@@ -68,9 +68,7 @@ class PromptTask(base.Task):
         #     means=torch.div(means,len(prompts))
         #     #open file path, 
              
-        #     # features=clip.encode_image(Im)
-        #     # features += means
-        #     text_features=features/features.norm(dim=-1,keepdim=True)
+        #     self.text_features=means/means.norm(dim=-1,keepdim=True)
 
         #else prompt is string:
         self.text = clip.tokenize([prompt]).to(device)
@@ -136,13 +134,9 @@ class PromptTask(base.Task):
         obs["qvel"] = self.get_qvel(physics)
         obs["env_state"] = self.get_env_state(physics)
         obs["images"] = {}
-        if hasattr(physics,"render"):
-            obs["images"]["top"] = physics.render(height=480, width=640, camera_id="top")
-            obs["images"]["angle"] = physics.render(height=480, width=640, camera_id="angle")
-            obs["images"]["vis"] = physics.render(height=480, width=640, camera_id="front_close")
-        else:
-            print(physics.__dir__())
-            print(physics.__class__)
+        obs["images"]["top"] = physics.render(height=480, width=640, camera_id="top")
+        obs["images"]["angle"] = physics.render(height=480, width=640, camera_id="angle")
+        obs["images"]["vis"] = physics.render(height=480, width=640, camera_id="front_close")
         return obs
 
     def get_reward(self, physics):
@@ -154,9 +148,11 @@ class PromptTask(base.Task):
         
         imageBatch=torch.stack([self.transform(i) for i in imageBatch],dim=0)
         #encode each image.
-        vectors=self.clip.encode_image(imageBatch)        
+        vectors=self.clip.encode_image(imageBatch)
         #do cosine similarity against prompt. 
-
+        if hasattr(self,"baseline_features"):
+            vectors=torch.sub(vectors,self.baseline_features)
+            
         vectors=vectors/torch.norm(vectors,dim=-1,keepdim=True)
         prod=vectors@self.text_features.T
         return torch.max(prod)*4
