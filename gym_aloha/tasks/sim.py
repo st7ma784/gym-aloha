@@ -138,7 +138,7 @@ class PromptTask(base.Task):
         obs["images"]["angle"] = physics.render(height=480, width=640, camera_id="angle")
         obs["images"]["vis"] = physics.render(height=480, width=640, camera_id="front_close")
         return obs
-
+    
     def get_reward(self, physics):
         imageBatch=[physics.render(height=480, width=640, camera_id="top")/255,
                     physics.render(height=480, width=640, camera_id="angle")/255,
@@ -152,7 +152,8 @@ class PromptTask(base.Task):
         #do cosine similarity against prompt. 
         if hasattr(self,"baseline_features"):
             vectors=torch.sub(vectors,self.baseline_features)
-            
+        else:
+            self.baseline_features=vectors
         vectors=vectors/torch.norm(vectors,dim=-1,keepdim=True)
         prod=vectors@self.text_features.T
         return torch.max(prod)*4
